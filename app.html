@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>みまもりジョーズ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #050a15;
+      color: #e8f4ff;
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #80eaff;
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+      flex: 1;
+    }
+
+    .shark-wrap {
+      position: relative;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .shark-wrap img {
+      width: 200px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 16px rgba(128, 234, 255, 0.6))
+              drop-shadow(0 0 32px rgba(43, 120, 197, 0.4));
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .shark-wrap img:hover { transform: scale(1.05); }
+    .shark-wrap img:active { transform: scale(0.97); }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .bubble {
+      background: rgba(43, 120, 197, 0.25);
+      border: 1px solid rgba(128, 234, 255, 0.4);
+      border-radius: 20px;
+      padding: 16px 20px;
+      min-height: 72px;
+      width: 100%;
+      font-size: 1rem;
+      line-height: 1.6;
+      box-shadow: 0 0 20px rgba(128, 234, 255, 0.15);
+      position: relative;
+    }
+
+    .bubble::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 10px solid transparent;
+      border-bottom-color: rgba(128, 234, 255, 0.4);
+    }
+
+    .bubble::after {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 8px solid transparent;
+      border-bottom-color: rgba(43, 120, 197, 0.25);
+    }
+
+    .bubble .name {
+      font-size: 0.75rem;
+      color: #80eaff;
+      margin-bottom: 6px;
+    }
+
+    .bubble .text { min-height: 1.6em; }
+
+    .bubble .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #80eaff;
+      vertical-align: text-bottom;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .chat-log {
+      width: 100%;
+      max-height: 160px;
+      overflow-y: auto;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-log .msg {
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 85%;
+      line-height: 1.5;
+    }
+
+    .chat-log .msg.user {
+      align-self: flex-end;
+      background: rgba(128, 234, 255, 0.15);
+      border: 1px solid rgba(128, 234, 255, 0.3);
+    }
+
+    .chat-log .msg.shark {
+      align-self: flex-start;
+      background: rgba(43, 120, 197, 0.2);
+      border: 1px solid rgba(43, 120, 197, 0.4);
+    }
+
+    .input-area {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 24px;
+      border: 1px solid rgba(128, 234, 255, 0.35);
+      background: rgba(255, 255, 255, 0.06);
+      color: #e8f4ff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-area input:focus {
+      border-color: #80eaff;
+      box-shadow: 0 0 12px rgba(128, 234, 255, 0.25);
+    }
+
+    .input-area input::placeholder { color: rgba(232, 244, 255, 0.4); }
+
+    .input-area button {
+      padding: 12px 20px;
+      border-radius: 24px;
+      border: none;
+      background: linear-gradient(135deg, #2b78c5, #1a5a9e);
+      color: #fff;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+
+    .input-area button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(43, 120, 197, 0.5);
+    }
+
+    .input-area button:active { transform: translateY(0); }
+
+    .hints {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 480px;
+    }
+
+    .hints button {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(128, 234, 255, 0.25);
+      background: transparent;
+      color: rgba(128, 234, 255, 0.8);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .hints button:hover {
+      background: rgba(128, 234, 255, 0.1);
+    }
+
+    .voice-panel {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 16px;
+      padding: 20px 16px 16px;
+      border-radius: 24px;
+      background: rgba(43, 120, 197, 0.12);
+      border: 1px solid rgba(128, 234, 255, 0.25);
+      box-shadow: 0 0 30px rgba(128, 234, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .voice-status {
+      font-size: 0.85rem;
+      color: rgba(128, 234, 255, 0.85);
+      text-align: center;
+      min-height: 1.4em;
+      transition: color 0.2s;
+    }
+
+    .voice-panel.listening .voice-status {
+      color: #80eaff;
+      animation: status-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes status-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    .voice-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .waveform {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 48px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .waveform .bar {
+      width: 4px;
+      height: 8px;
+      border-radius: 2px;
+      background: rgba(128, 234, 255, 0.2);
+      transition: background 0.2s;
+    }
+
+    .voice-panel.listening .waveform .bar {
+      background: #80eaff;
+      animation: wave 0.8s ease-in-out infinite alternate;
+    }
+
+    .waveform .bar:nth-child(1)  { animation-delay: 0.00s; }
+    .waveform .bar:nth-child(2)  { animation-delay: 0.10s; }
+    .waveform .bar:nth-child(3)  { animation-delay: 0.20s; }
+    .waveform .bar:nth-child(4)  { animation-delay: 0.30s; }
+    .waveform .bar:nth-child(5)  { animation-delay: 0.15s; }
+    .waveform .bar:nth-child(6)  { animation-delay: 0.25s; }
+    .waveform .bar:nth-child(7)  { animation-delay: 0.05s; }
+
+    @keyframes wave {
+      0%   { height: 8px;  opacity: 0.4; }
+      100% { height: 40px; opacity: 1; }
+    }
+
+    .mic-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .mic-ring {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(128, 234, 255, 0.3);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .voice-panel.listening .mic-ring {
+      animation: ring-pulse 1.6s ease-out infinite;
+    }
+
+    .voice-panel.listening .mic-ring:nth-child(2) {
+      animation-delay: 0.5s;
+    }
+
+    @keyframes ring-pulse {
+      0%   { transform: scale(1);   opacity: 0.7; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .mic-btn {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid rgba(128, 234, 255, 0.5);
+      background: linear-gradient(145deg, #2b78c5, #1a4f8a);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+      box-shadow: 0 4px 20px rgba(43, 120, 197, 0.4);
+    }
+
+    .mic-btn svg {
+      width: 32px;
+      height: 32px;
+      fill: currentColor;
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 6px 28px rgba(128, 234, 255, 0.35);
+    }
+
+    .mic-btn:active { transform: scale(0.96); }
+
+    .voice-panel.listening .mic-btn {
+      border-color: #80eaff;
+      background: linear-gradient(145deg, #3a9ee8, #2b78c5);
+      box-shadow: 0 0 24px rgba(128, 234, 255, 0.55);
+      animation: mic-glow 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes mic-glow {
+      0%   { box-shadow: 0 0 16px rgba(128, 234, 255, 0.4); }
+      100% { box-shadow: 0 0 32px rgba(128, 234, 255, 0.75); }
+    }
+
+    .voice-transcript {
+      width: 100%;
+      min-height: 2.4em;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px dashed rgba(128, 234, 255, 0.2);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      text-align: center;
+      color: rgba(232, 244, 255, 0.45);
+    }
+
+    .voice-transcript.has-text {
+      color: #e8f4ff;
+      border-style: solid;
+      border-color: rgba(128, 234, 255, 0.35);
+    }
+
+    .voice-transcript .interim {
+      color: rgba(128, 234, 255, 0.6);
+    }
+
+    .voice-hint {
+      font-size: 0.72rem;
+      color: rgba(232, 244, 255, 0.35);
+    }
+
+    .input-area .mic-inline {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(43, 120, 197, 0.35);
+      border: 1px solid rgba(128, 234, 255, 0.35);
+    }
+
+    .input-area .mic-inline svg {
+      width: 20px;
+      height: 20px;
+      fill: #80eaff;
+    }
+
+    .input-area .mic-inline.listening {
+      background: linear-gradient(145deg, #3a9ee8, #2b78c5);
+      border-color: #80eaff;
+      box-shadow: 0 0 12px rgba(128, 234, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <h1>🦈 サメとおしゃべり</h1>
+
+  <div class="stage">
+    <div class="shark-wrap">
+      <img src="assets/shark.png" alt="サメ" id="shark" title="クリックしてあいさつ！">
+    </div>
+
+    <div class="bubble">
+      <div class="name">ジョーズくん</div>
+      <div class="text" id="bubble-text"></div>
+    </div>
+
+    <div class="chat-log" id="chat-log"></div>
+  </div>
+
+  <div class="hints">
+    <button type="button" data-msg="こんにちは">こんにちは</button>
+    <button type="button" data-msg="名前は？">名前は？</button>
+    <button type="button" data-msg="好きな食べ物は？">好きな食べ物は？</button>
+    <button type="button" data-msg="ありがとう">ありがとう</button>
+  </div>
+
+  <div class="voice-panel" id="voice-panel">
+    <div class="voice-status" id="voice-status">🎙 マイクを押して話しかけよう</div>
+    <div class="voice-visual">
+      <div class="waveform" aria-hidden="true">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </div>
+      <div class="mic-wrap">
+        <span class="mic-ring"></span>
+        <span class="mic-ring"></span>
+        <button class="mic-btn" id="mic-btn" type="button" aria-label="音声入力">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 17 11z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="waveform" aria-hidden="true">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </div>
+    </div>
+    <div class="voice-transcript" id="voice-transcript">音声がここに表示されます</div>
+    <div class="voice-hint">もう一度押すと録音を止めます</div>
+  </div>
+
+  <form class="input-area" id="chat-form">
+    <button type="button" class="mic-inline" id="mic-inline" aria-label="音声入力">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 17 11z"/>
+      </svg>
+    </button>
+    <input type="text" id="user-input" placeholder="メッセージを入力..." autocomplete="off">
+    <button type="submit">送信</button>
+  </form>
+
+  <script>
+    const bubbleText = document.getElementById("bubble-text");
+    const chatLog = document.getElementById("chat-log");
+    const userInput = document.getElementById("user-input");
+    const shark = document.getElementById("shark");
+    const voicePanel = document.getElementById("voice-panel");
+    const voiceStatus = document.getElementById("voice-status");
+    const voiceTranscript = document.getElementById("voice-transcript");
+    const micBtn = document.getElementById("mic-btn");
+    const micInline = document.getElementById("mic-inline");
+
+    let typingTimer = null;
+    let lastInputWasVoice = false;
+    let recognition = null;
+    let isListening = false;
+    let finalTranscript = "";
+
+    const greetings = [
+      "やあ！ぼくはジョーズくん！きみとおしゃべりするのが大好きだよ 🦈",
+      "こんにちは！今日も元気に泳いでるよ〜",
+      "ぷくっ！会えてうれしいな！なんでも聞いてね",
+    ];
+
+    const responses = [
+      { keys: ["こんにちは", "hello", "hi", "やあ", "おはよう", "こんばんは"], reply: "こんにちは！きみに会えてうれしいよ！今日はどんな一日？" },
+      { keys: ["名前", "なまえ", "who are you"], reply: "ぼくの名前はジョーズくん！海の中で一番フレンドリーなサメだよ！" },
+      { keys: ["食べ物", "たべもの", "好き", "すき", "food"], reply: "お魚が大好き！でも友だちとは仲良くしたいから、きみとはおしゃべりするよ 😊" },
+      { keys: ["ありがとう", "thanks", "thank"], reply: "どういたしまして！また話そうね！" },
+      { keys: ["さようなら", "bye", "バイバイ", "またね"], reply: "バイバイ！また遊びに来てね〜 🌊" },
+      { keys: ["元気", "げんき", "調子", "ちょうし"], reply: "元気いっぱい！今日は海がきれいで気持ちいいよ〜" },
+      { keys: ["泳", "およ", "swim"], reply: "泳ぐの大好き！一緒に海を泳ぎたいな〜" },
+      { keys: ["怖", "こわ", "scary", "危険"], reply: "ぼくは怖くないよ！優しいサメなんだ。触ってみて！" },
+      { keys: ["海", "うみ", "ocean", "sea"], reply: "海は広くてきれいだよ！サンゴやお魚の友だちがたくさんいるの" },
+      { keys: ["?", "？", "何", "なに", "どう", "why", "what"], reply: "いい質問だね！ぼくも一緒に考えてみるよ。もう少し教えてくれる？" },
+    ];
+
+    const fallbacks = [
+      "ふむふむ、なるほどね！もっと教えて！",
+      "へぇ〜！それはおもしろいね！",
+      "うんうん、わかるよ！他には？",
+      "ぷくっ！そうなんだ！もっと聞かせて！",
+      "きみの話、好きだな〜！続けて！",
+    ];
+
+    function getReply(text) {
+      const lower = text.toLowerCase();
+      for (const r of responses) {
+        if (r.keys.some(k => lower.includes(k) || text.includes(k))) {
+          return r.reply;
+        }
+      }
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    function typeText(text, onDone) {
+      clearInterval(typingTimer);
+      bubbleText.innerHTML = '<span class="cursor"></span>';
+      let i = 0;
+      typingTimer = setInterval(() => {
+        if (i < text.length) {
+          bubbleText.textContent = text.slice(0, i + 1);
+          i++;
+        } else {
+          clearInterval(typingTimer);
+          bubbleText.textContent = text;
+          if (onDone) onDone();
+        }
+      }, 40);
+    }
+
+    function addLog(text, who) {
+      const el = document.createElement("div");
+      el.className = `msg ${who}`;
+      el.textContent = text;
+      chatLog.appendChild(el);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function speakText(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "ja-JP";
+      utter.rate = 1.05;
+      utter.pitch = 1.1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function reply(userText) {
+      const answer = getReply(userText);
+      addLog(answer, "shark");
+      typeText(answer, () => {
+        if (lastInputWasVoice) speakText(answer);
+      });
+    }
+
+    function sendMessage(text, fromVoice = false) {
+      const msg = text.trim();
+      if (!msg) return;
+      lastInputWasVoice = fromVoice;
+      addLog(msg, "user");
+      userInput.value = "";
+      setTimeout(() => reply(msg), 400);
+    }
+
+    function setListeningUI(active) {
+      isListening = active;
+      voicePanel.classList.toggle("listening", active);
+      micInline.classList.toggle("listening", active);
+      voiceStatus.textContent = active
+        ? "🎙 聞いています… 話しかけてください"
+        : "🎙 マイクを押して話しかけよう";
+    }
+
+    function updateTranscript(interim) {
+      if (finalTranscript || interim) {
+        voiceTranscript.classList.add("has-text");
+        voiceTranscript.innerHTML = finalTranscript
+          + (interim ? `<span class="interim">${interim}</span>` : "");
+      } else {
+        voiceTranscript.classList.remove("has-text");
+        voiceTranscript.textContent = "音声がここに表示されます";
+      }
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceStatus.textContent = "⚠ このブラウザは音声入力に対応していません";
+        micBtn.disabled = true;
+        micInline.disabled = true;
+        micBtn.style.opacity = "0.4";
+        micInline.style.opacity = "0.4";
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "ja-JP";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        finalTranscript = "";
+        updateTranscript("");
+        setListeningUI(true);
+      };
+
+      recognition.onresult = (e) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) {
+            finalTranscript += t;
+          } else {
+            interim += t;
+          }
+        }
+        updateTranscript(interim);
+        userInput.value = (finalTranscript + interim).trim();
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === "no-speech") {
+          voiceStatus.textContent = "🔇 声が聞こえませんでした。もう一度お試しください";
+        } else if (e.error === "not-allowed") {
+          voiceStatus.textContent = "⚠ マイクの使用が許可されていません";
+        } else {
+          voiceStatus.textContent = "⚠ 音声認識エラーが発生しました";
+        }
+        setListeningUI(false);
+      };
+
+      recognition.onend = () => {
+        setListeningUI(false);
+        const text = (finalTranscript || userInput.value).trim();
+        if (text) {
+          voiceTranscript.textContent = text;
+          voiceTranscript.classList.add("has-text");
+          sendMessage(text, true);
+          setTimeout(() => {
+            finalTranscript = "";
+            updateTranscript("");
+          }, 600);
+        }
+      };
+    }
+
+    function toggleListening() {
+      if (!recognition) return;
+      if (isListening) {
+        recognition.stop();
+      } else {
+        window.speechSynthesis?.cancel();
+        try {
+          recognition.start();
+        } catch {
+          recognition.stop();
+          setTimeout(() => recognition.start(), 200);
+        }
+      }
+    }
+
+    document.getElementById("chat-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      sendMessage(userInput.value);
+    });
+
+    document.querySelectorAll(".hints button").forEach((btn) => {
+      btn.addEventListener("click", () => sendMessage(btn.dataset.msg));
+    });
+
+    shark.addEventListener("click", () => {
+      const g = greetings[Math.floor(Math.random() * greetings.length)];
+      typeText(g);
+      addLog(g, "shark");
+    });
+
+    micBtn.addEventListener("click", toggleListening);
+    micInline.addEventListener("click", toggleListening);
+
+    initSpeechRecognition();
+    typeText(greetings[0]);
+  </script>
+</body>
+</html>
